@@ -28,8 +28,7 @@ Route::middleware(['auth', 'admin'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', function () {
-            return 'Admin Dashboard';
+            return Inertia::render('Admin/Dashboard');
         })->name('admin.dashboard');
     });
-
 require __DIR__.'/auth.php';
