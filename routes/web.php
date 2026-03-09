@@ -59,10 +59,18 @@ Route::middleware(['auth', 'admin'])
     ->name('admin.')
     ->group(function () {
 
-        // Dashboard
-        Route::get('/dashboard', function () {
-            return Inertia::render('Admin/Dashboard');
-        })->name('dashboard');
+    // Replace the admin dashboard route in web.php with this:
+
+    Route::get('/dashboard', function () {
+        return Inertia::render('Admin/Dashboard', [
+            'totalOrders'      => \App\Models\Order::count(),
+            'totalRevenue'     => \App\Models\Order::where('status', 'delivered')->sum('total_amount'),
+            'totalProducts'    => \App\Models\Product::where('is_active', true)->count(),
+            'totalCategories'  => \App\Models\Category::count(),
+            'recentOrders'     => \App\Models\Order::with('user')->latest()->limit(5)->get(),
+            'lowStockProducts' => \App\Models\Product::where('stock', '<=', 5)->where('is_active', true)->orderBy('stock')->limit(10)->get(),
+        ]);
+    })->name('admin.dashboard');
 
         // Products
         Route::resource('products', AdminProductController::class);
