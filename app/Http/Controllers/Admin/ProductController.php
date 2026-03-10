@@ -13,22 +13,36 @@ use Inertia\Response;
 
 class ProductController extends Controller
 {
-    public function index(): Response
+    // Replace the index() method in App\Http\Controllers\Admin\ProductController with this:
+
+    public function index(Request $request): Response
     {
-        $products = Product::with('category')
-            ->latest()
-            ->paginate(15);
+        $query = Product::with('category')->latest();
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%")
+                    ->orWhere('brand', 'like', "%{$request->search}%");
+            });
+        }
+
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->category);
+        }
+
+        if ($request->filled('stock')) {
+            match ($request->stock) {
+                'in_stock'     => $query->where('stock', '>', 5),
+                'low_stock'    => $query->whereBetween('stock', [1, 5]),
+                'out_of_stock' => $query->where('stock', 0),
+                default        => null,
+            };
+        }
 
         return Inertia::render('Admin/Products/Index', [
-            'products' => $products,
-        ]);
-    }
-
-    public function create(): Response
-    {
-        return Inertia::render('Admin/Products/Create', [
+            'products'   => $query->paginate(15)->withQueryString(),
             'categories' => Category::all(),
-            'conditions' => ['new', 'used', 'refurbished'],
+            'filters'    => $request->only(['search', 'category', 'stock']),
         ]);
     }
 
