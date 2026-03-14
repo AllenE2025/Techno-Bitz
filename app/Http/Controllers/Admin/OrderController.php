@@ -11,17 +11,18 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
+    // Update the index() method in App\Http\Controllers\Admin\OrderController:
+
     public function index(Request $request): Response
     {
         $query = Order::with('user')
+            ->withCount('items')
             ->latest();
 
-        // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // Search by customer name or order id
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('id', $request->search)
@@ -30,10 +31,8 @@ class OrderController extends Controller
             });
         }
 
-        $orders = $query->paginate(15)->withQueryString();
-
         return Inertia::render('Admin/Orders/Index', [
-            'orders'   => $orders,
+            'orders'   => $query->paginate(15)->withQueryString(),
             'statuses' => Order::STATUSES,
             'filters'  => $request->only(['status', 'search']),
         ]);
