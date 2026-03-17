@@ -16,10 +16,15 @@ use Inertia\Inertia;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
-        'canLogin'       => Route::has('login'),
-        'canRegister'    => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion'     => PHP_VERSION,
+        'canLogin'         => Route::has('login'),
+        'canRegister'      => Route::has('register'),
+        'laravelVersion'   => Application::VERSION,
+        'phpVersion'       => PHP_VERSION,
+        'categories'       => \App\Models\Category::all(),
+        'featuredProducts' => \App\Models\Product::where('is_featured', true)
+            ->where('is_active', true)
+            ->limit(8)
+            ->get(),
     ]);
 })->name('home');
 
@@ -59,18 +64,18 @@ Route::middleware(['auth', 'admin'])
     ->name('admin.')
     ->group(function () {
 
-    // Replace the admin dashboard route in web.php with this:
+        // Replace the admin dashboard route in web.php with this:
 
-    Route::get('/dashboard', function () {
-        return Inertia::render('Admin/Dashboard', [
-            'totalOrders'      => \App\Models\Order::count(),
-            'totalRevenue'     => \App\Models\Order::where('status', 'delivered')->sum('total_amount'),
-            'totalProducts'    => \App\Models\Product::where('is_active', true)->count(),
-            'totalCategories'  => \App\Models\Category::count(),
-            'recentOrders'     => \App\Models\Order::with('user')->latest()->limit(5)->get(),
-            'lowStockProducts' => \App\Models\Product::where('stock', '<=', 5)->where('is_active', true)->orderBy('stock')->limit(10)->get(),
-        ]);
-    })->name('admin.dashboard');
+        Route::get('/dashboard', function () {
+            return Inertia::render('Admin/Dashboard', [
+                'totalOrders'      => \App\Models\Order::count(),
+                'totalRevenue'     => \App\Models\Order::where('status', 'delivered')->sum('total_amount'),
+                'totalProducts'    => \App\Models\Product::where('is_active', true)->count(),
+                'totalCategories'  => \App\Models\Category::count(),
+                'recentOrders'     => \App\Models\Order::with('user')->latest()->limit(5)->get(),
+                'lowStockProducts' => \App\Models\Product::where('stock', '<=', 5)->where('is_active', true)->orderBy('stock')->limit(10)->get(),
+            ]);
+        })->name('dashboard');
 
         // Products
         Route::resource('products', AdminProductController::class);
