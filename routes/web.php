@@ -36,6 +36,19 @@ Route::get('/shop/{product:slug}', [ProductController::class, 'show'])->name('sh
 
 Route::middleware('auth')->group(function () {
 
+    // Dashboard
+    Route::get('/dashboard', function () {
+        $user = request()->user();
+        return Inertia::render('Dashboard', [
+            'stats' => [
+                'totalOrders'     => \App\Models\Order::where('user_id', $user->id)->count(),
+                'pendingOrders'   => \App\Models\Order::where('user_id', $user->id)->where('status', 'pending')->count(),
+                'deliveredOrders' => \App\Models\Order::where('user_id', $user->id)->where('status', 'delivered')->count(),
+            ],
+            'recentOrders' => \App\Models\Order::where('user_id', $user->id)->latest()->limit(5)->get(),
+        ]);
+    })->middleware('verified')->name('dashboard');
+
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -64,8 +77,7 @@ Route::middleware(['auth', 'admin'])
     ->name('admin.')
     ->group(function () {
 
-        // Replace the admin dashboard route in web.php with this:
-
+        // Dashboard
         Route::get('/dashboard', function () {
             return Inertia::render('Admin/Dashboard', [
                 'totalOrders'      => \App\Models\Order::count(),
